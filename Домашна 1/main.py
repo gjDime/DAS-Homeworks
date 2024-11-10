@@ -4,14 +4,15 @@ import requests
 from datetime import datetime
 
 from filters.download_filter import download_issuers
-from filters.last_date_filter import tacna_funkcija
+from filters.last_date_filter import last_date
+from filters.update_filter import update
 
 # tables = download_filter()
 #check_last_date(download_data())
 #print(datetime.today().date())
 #table.to_csv('test.csv', index=False)
-tacna_funkcija(download_issuers())
 
+update(last_date(download_issuers()))
 
 # df = pd.read_csv('test.csv')
 #
