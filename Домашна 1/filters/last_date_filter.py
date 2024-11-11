@@ -1,19 +1,19 @@
 import pandas as pd
+from bs4 import BeautifulSoup
 from selenium import webdriver
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from datetime import datetime, timedelta
 from selenium.common.exceptions import TimeoutException
+from selenium.webdriver.chrome.options import Options
 
 
-def download_10years(issuer):
+def download_10years(issuer,driver):
     date = datetime.today()
     print(issuer)
 
-    options = webdriver.FirefoxOptions()
-    options.headless = True
-    driver = webdriver.Firefox(options=options)  # Firefox or Chrome
+      # Firefox or Chrome
     driver.get('https://www.mse.mk/en/stats/symbolhistory/' + issuer)
     df_10years = pd.DataFrame()
 
@@ -25,19 +25,11 @@ def download_10years(issuer):
         df_year = download_year(from_date, to_date, issuer, driver)
         df_10years = pd.concat([df_10years, df_year], ignore_index=True)
         date = date - timedelta(days=365)
-    driver.quit()
-
-# TODO
-    # if len(df_10years) == 0:
-    #     row = [datetime.today()] + [''] * 8
-    #     df_10years = pd.DataFrame([row])
 
     return df_10years
 
 
 def download_year(from_date, to_date, issuer, driver):
-    # url = 'https://www.mse.mk/en/stats/symbolhistory/' + issuer
-    # driver.get('https://www.mse.mk/en/stats/symbolhistory/' + issuer)
 
     WebDriverWait(driver, 3).until(EC.presence_of_element_located((By.CSS_SELECTOR, '#FromDate')))
     from_date_input = driver.find_element(By.CSS_SELECTOR, '#FromDate')
@@ -50,7 +42,6 @@ def download_year(from_date, to_date, issuer, driver):
     to_date_input.send_keys(to_date)
 
     WebDriverWait(driver, 1).until(EC.presence_of_element_located((By.CSS_SELECTOR, 'input.btn')))
-    # button_find = driver.find_element(By.CSS_SELECTOR, '#report-filter-container > ul > li.container-end > input')
     button_find = driver.find_element(By.CSS_SELECTOR, 'input.btn')
     button_find.click()
 
@@ -58,7 +49,22 @@ def download_year(from_date, to_date, issuer, driver):
         WebDriverWait(driver, 5).until(EC.presence_of_element_located((By.CSS_SELECTOR, '#resultsTable')))
     except TimeoutException:
         return pd.DataFrame()
-    table = driver.find_element(By.CSS_SELECTOR, '#resultsTable')
+
+    soup = BeautifulSoup(driver.page_source, 'html.parser')
+    table = soup.select_one('#resultsTable')
+
+    if table is None:
+        return pd.DataFrame()
+
+    rows = []
+    tbody = table.find('tbody')
+    for tr in tbody.find_all('tr'):
+        row = []
+        for td in tr.find_all('td'):
+            row.append(td.get_text(strip=True))
+        rows.append(row)
+
+
 
     headers = ['Date', 'Last trade price', 'Max', 'Min', 'Avg. Price', '%chg.', 'Volume', 'Turnover in BEST in denars',
                'Total turnover in denars']
@@ -66,17 +72,16 @@ def download_year(from_date, to_date, issuer, driver):
     # for th in thead.find_elements(By.TAG_NAME, 'th'):  # Find all 'th' elements in the 'thead'
     #     headers.append(th.text.strip())
 
-    rows = []
-    tbody = table.find_element(By.TAG_NAME, 'tbody')
-    for tr in tbody.find_elements(By.TAG_NAME, 'tr'):
-        row = []
-        for td in tr.find_elements(By.TAG_NAME, 'td'):
-            row.append(td.text.strip())
-        rows.append(row)
+    # rows = []
+    # tbody = table.find_element(By.TAG_NAME, 'tbody')
+    # for tr in tbody.find_elements(By.TAG_NAME, 'tr'):
+    #     row = []
+    #     for td in tr.find_elements(By.TAG_NAME, 'td'):
+    #         row.append(td.text.strip())
+    #     rows.append(row)
 
     df = pd.DataFrame(rows, columns=headers)
-    df = df.dropna(subset=['Date'])
-    df = df[df['Volume'] != '0']
+    # df = df[df['Volume'] != '0']
     df['Issuer'] = issuer
     return df
 
@@ -84,11 +89,19 @@ def download_year(from_date, to_date, issuer, driver):
 def last_date(listIssuers):
     try:
         dataframe = pd.read_csv('stock_market.csv')
+        # for col in dataframe.columns[1:9]:  # Column indices are zero-based, so 1 is the second column
+        #     dataframe[col] = pd.to_numeric(dataframe[col], errors='coerce')
+        # for col in dataframe.columns[1:9]:  # Column indices are zero-based, so 1 is the second column
+        #     dataframe[col] = dataframe[col].apply(lambda x: f"{x:,.2f}" if pd.notnull(x) else "0")
     except:
         dataframe = pd.DataFrame()
 
     last_date_dict = {}
-    df_all_issuers = pd.DataFrame()
+    #df_all_issuers = pd.DataFrame()
+    options = webdriver.FirefoxOptions()
+    options.headless = True
+    driver = webdriver.Firefox(options=options)
+
     for issuer in listIssuers:
         try:
             issuer_df = dataframe[dataframe['Issuer'] == issuer]
@@ -96,12 +109,13 @@ def last_date(listIssuers):
             issuer_df = pd.DataFrame()
 
         if len(issuer_df) == 0:
-            issuer_df = download_10years(issuer)
-            issuer_df.to_csv('stock_market.csv', mode='a', header=False, index=False)  # 10god worth issuer df
+            issuer_df = download_10years(issuer,driver)
+            issuer_df.to_csv('stock_market.csv', mode='a', index=False)  # 10god worth issuer df
 
         # df_all_issuers = pd.concat([df_all_issuers, issuer_df], ignore_index=True)
-        last_date_issuer = datetime.today().strftime('%m-%d-%Y')
-        last_date_dict[issuer] = last_date_issuer
 
+        last_date_issuer = issuer_df.iloc[1, 0]
+        last_date_dict[issuer] = last_date_issuer
+    driver.quit()
     # df_all_issuers.to_csv('stock_market.csv', index=False)
     return last_date_dict

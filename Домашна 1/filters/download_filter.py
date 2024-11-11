@@ -12,15 +12,3 @@ def download_issuers():
     listIssuers = [issuer.text.strip() for issuer in listIssuers]
     return listIssuers
 
-# def download_data():
-#     listIssuers = download_issuers()
-#
-#     all_dfs = []
-#     for issuer in listIssuers:
-#         all_dfs.append(download_issuer(issuer))
-#
-#     final_df = pd.concat(all_dfs, ignore_index=True)
-#     #cols = ['Issuer'] + [col for col in final_df.columns if col != 'Issuer']
-#     # final_df = final_df[cols]
-#
-#     return all_dfs
