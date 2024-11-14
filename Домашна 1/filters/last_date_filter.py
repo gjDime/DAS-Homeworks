@@ -22,14 +22,14 @@ def download_10years(issuer,driver):
         from_date = (date - timedelta(days=365)).strftime('%m/%d/%Y')
 
         print(f"{i + 1} {from_date} {to_date}")
-        df_year = download_year(from_date, to_date, issuer, driver)
+        df_year = download_data(from_date, to_date, issuer, driver)
         df_10years = pd.concat([df_10years, df_year], ignore_index=True)
         date = date - timedelta(days=365)
 
     return df_10years
 
 
-def download_year(from_date, to_date, issuer, driver):
+def download_data(from_date, to_date, issuer, driver):
 
     WebDriverWait(driver, 3).until(EC.presence_of_element_located((By.CSS_SELECTOR, '#FromDate')))
     from_date_input = driver.find_element(By.CSS_SELECTOR, '#FromDate')
@@ -64,24 +64,10 @@ def download_year(from_date, to_date, issuer, driver):
             row.append(td.get_text(strip=True))
         rows.append(row)
 
-
-
     headers = ['Date', 'Last trade price', 'Max', 'Min', 'Avg. Price', '%chg.', 'Volume', 'Turnover in BEST in denars',
                'Total turnover in denars']
-    # thead = table.find_element(By.TAG_NAME, 'thead')  # Re-locate the 'thead'
-    # for th in thead.find_elements(By.TAG_NAME, 'th'):  # Find all 'th' elements in the 'thead'
-    #     headers.append(th.text.strip())
-
-    # rows = []
-    # tbody = table.find_element(By.TAG_NAME, 'tbody')
-    # for tr in tbody.find_elements(By.TAG_NAME, 'tr'):
-    #     row = []
-    #     for td in tr.find_elements(By.TAG_NAME, 'td'):
-    #         row.append(td.text.strip())
-    #     rows.append(row)
 
     df = pd.DataFrame(rows, columns=headers)
-    # df = df[df['Volume'] != '0']
     df['Issuer'] = issuer
     return df
 
@@ -89,15 +75,12 @@ def download_year(from_date, to_date, issuer, driver):
 def last_date(listIssuers):
     try:
         dataframe = pd.read_csv('stock_market.csv')
-        # for col in dataframe.columns[1:9]:  # Column indices are zero-based, so 1 is the second column
-        #     dataframe[col] = pd.to_numeric(dataframe[col], errors='coerce')
-        # for col in dataframe.columns[1:9]:  # Column indices are zero-based, so 1 is the second column
-        #     dataframe[col] = dataframe[col].apply(lambda x: f"{x:,.2f}" if pd.notnull(x) else "0")
     except:
         dataframe = pd.DataFrame()
 
     last_date_dict = {}
     #df_all_issuers = pd.DataFrame()
+
     options = webdriver.FirefoxOptions()
     options.headless = True
     driver = webdriver.Firefox(options=options)
@@ -105,10 +88,11 @@ def last_date(listIssuers):
     for issuer in listIssuers:
         try:
             issuer_df = dataframe[dataframe['Issuer'] == issuer]
+            issuer_df = issuer_df.sort_values(by='Date', ascending=False)
         except KeyError:
             issuer_df = pd.DataFrame()
 
-        if len(issuer_df) == 0:
+        if issuer_df.empty:
             issuer_df = download_10years(issuer,driver)
             issuer_df.to_csv('stock_market.csv', mode='a', index=False)  # 10god worth issuer df
 
