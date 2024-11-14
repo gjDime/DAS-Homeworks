@@ -9,11 +9,11 @@ from selenium.common.exceptions import TimeoutException
 from selenium.webdriver.chrome.options import Options
 
 
-def download_10years(issuer,driver):
+def download_10years(issuer, driver):
     date = datetime.today()
-    print(issuer)
+    #    print(issuer)
 
-      # Firefox or Chrome
+    # Firefox or Chrome
     driver.get('https://www.mse.mk/en/stats/symbolhistory/' + issuer)
     df_10years = pd.DataFrame()
 
@@ -21,7 +21,7 @@ def download_10years(issuer,driver):
         to_date = date.strftime('%m/%d/%Y')
         from_date = (date - timedelta(days=365)).strftime('%m/%d/%Y')
 
-        print(f"{i + 1} {from_date} {to_date}")
+        #        print(f"{i + 1} {from_date} {to_date}")
         df_year = download_data(from_date, to_date, issuer, driver)
         df_10years = pd.concat([df_10years, df_year], ignore_index=True)
         date = date - timedelta(days=365)
@@ -30,18 +30,21 @@ def download_10years(issuer,driver):
 
 
 def download_data(from_date, to_date, issuer, driver):
+    if 'No data' in driver.page_source:
+        # print('No data '+from_date+' '+ issuer)
+        return pd.DataFrame()
 
-    WebDriverWait(driver, 3).until(EC.presence_of_element_located((By.CSS_SELECTOR, '#FromDate')))
+    # WebDriverWait(driver, 3).until(EC.presence_of_element_located((By.CSS_SELECTOR, '#FromDate')))
     from_date_input = driver.find_element(By.CSS_SELECTOR, '#FromDate')
     from_date_input.clear()
     from_date_input.send_keys(from_date)
 
-    WebDriverWait(driver, 1).until(EC.presence_of_element_located((By.CSS_SELECTOR, '#ToDate')))
+    #     WebDriverWait(driver, 1).until(EC.presence_of_element_located((By.CSS_SELECTOR, '#ToDate')))
     to_date_input = driver.find_element(By.CSS_SELECTOR, '#ToDate')
     to_date_input.clear()
     to_date_input.send_keys(to_date)
 
-    WebDriverWait(driver, 1).until(EC.presence_of_element_located((By.CSS_SELECTOR, 'input.btn')))
+    # WebDriverWait(driver, 1).until(EC.presence_of_element_located((By.CSS_SELECTOR, 'input.btn')))
     button_find = driver.find_element(By.CSS_SELECTOR, 'input.btn')
     button_find.click()
 
@@ -79,7 +82,7 @@ def last_date(listIssuers):
         dataframe = pd.DataFrame()
 
     last_date_dict = {}
-    #df_all_issuers = pd.DataFrame()
+    # df_all_issuers = pd.DataFrame()
 
     options = webdriver.FirefoxOptions()
     options.headless = True
@@ -93,12 +96,12 @@ def last_date(listIssuers):
             issuer_df = pd.DataFrame()
 
         if issuer_df.empty:
-            issuer_df = download_10years(issuer,driver)
-            issuer_df.to_csv('stock_market.csv', mode='a', index=False)  # 10god worth issuer df
+            issuer_df = download_10years(issuer, driver)
+            issuer_df.to_csv('stock_market.csv', mode='a', header=False, index=False)  # 10god worth issuer df
 
         # df_all_issuers = pd.concat([df_all_issuers, issuer_df], ignore_index=True)
 
-        last_date_issuer = issuer_df.iloc[1, 0]
+        last_date_issuer = issuer_df['Date'].iloc[0]
         last_date_dict[issuer] = last_date_issuer
     driver.quit()
     # df_all_issuers.to_csv('stock_market.csv', index=False)
