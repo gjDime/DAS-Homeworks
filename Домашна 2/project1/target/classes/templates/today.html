@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Company Historical Prices</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        body {
+            background: linear-gradient(135deg, #ff4d4d, #cc0000); /* Red gradient */
+            color: #f1faee;
+            font-family: 'Arial', sans-serif;
+        }
+
+        h1 {
+            color: #f1faee;
+            font-size: 2.5rem;
+            font-weight: 700;
+            margin-bottom: 30px;
+            text-align: center;
+        }
+
+        .table {
+            background-color: #ffffff;
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 0 15px rgba(0, 0, 0, 0.2);
+        }
+
+        .table th {
+            background-color: #cc0000; /* Red background for headers */
+            color: #f1faee;
+            font-weight: bold;
+            font-size: 1rem;
+            text-transform: uppercase;
+        }
+
+        .table-striped tbody tr:nth-of-type(odd) {
+            background-color: #f8f9fa;
+        }
+
+        .table-striped tbody tr:nth-of-type(even) {
+            background-color: #f1f5f9;
+        }
+
+        .table-hover tbody tr:hover {
+            background-color: #ff4d4d; /* Red hover background */
+            color: #ffffff;
+        }
+
+        td, th {
+            padding: 1rem;
+            text-align: center;
+            vertical-align: middle;
+        }
+
+        .table-bordered th,
+        .table-bordered td {
+            border: 1px solid #dee2e6;
+        }
+
+        .container {
+            margin-top: 60px;
+        }
+
+        /* Additional styling for responsiveness */
+        @media (max-width: 768px) {
+            h1 {
+                font-size: 2rem;
+            }
+            .table {
+                font-size: 0.9rem;
+            }
+        }
+    </style>
+</head>
+<body>
+
+<div th:insert="/layout/layout :: navbar"></div>
+
+<div class="container mt-5">
+    <h1 class="text-center mb-4">Company Historical Prices</h1>
+    <div class="table-responsive">
+        <table class="table table-bordered table-striped table-hover">
+            <thead>
+            <tr>
+                <th>ID</th>
+                <th>Date</th>
+                <th>Last Transaction Price</th>
+                <th>Max Price</th>
+                <th>Min Price</th>
+                <th>Average Price</th>
+                <th>Percentage Change</th>
+                <th>Quantity</th>
+                <th>Turnover Best</th>
+                <th>Total Turnover</th>
+                <th>Company</th>
+            </tr>
+            </thead>
+            <tbody>
+            <!-- Thymeleaf template iteration -->
+            <tr th:each="history : ${prices}">
+                <td th:text="${history.id}"></td>
+                <td th:text="${history.date}"></td>
+                <td th:text="${history.lastTransactionPrice}"></td>
+                <td th:text="${history.maxPrice}"></td>
+                <td th:text="${history.minPrice}"></td>
+                <td th:text="${history.averagePrice}"></td>
+                <td th:text="${history.percentageChange} + '%'"></td>
+                <td th:text="${history.quantity}"></td>
+                <td th:text="${history.turnoverBest}"></td>
+                <td th:text="${history.totalTurnover}"></td>
+                <td th:text="${history.company.companyCode}"></td>
+            </tr>
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>
