@@ -16,6 +16,7 @@ import java.io.IOException;
 import java.text.NumberFormat;
 import java.time.LocalDate;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Locale;
 
@@ -33,9 +34,14 @@ public class FilterPriceLog implements Filter<List<BusinessEntity>> {
 
     public List<BusinessEntity> execute(List<BusinessEntity> input) throws IOException {
         List<BusinessEntity> companies = new ArrayList<>();
-
+        List<String> toIgnore = Arrays.asList("BLTU", "CBNG", "ELNC", "ENSA", "INHO", "INTP", "KULT", "LAJO", "MPTE", "MZHE",
+                "OBPP", "OTEK", "SPOL", "TASK", "TIGA", "TRDB", "VFPM", "ZILUP");
+        input = input.stream()
+                .filter(i -> !toIgnore.contains(i.getCompanyCode()))
+                .toList();
         for (BusinessEntity company : input) {
             if (company.getLastUpdated() == null) {
+                System.out.println("KOMPANI PROCESSING NOW: " + company.getCompanyCode());
                 for (int i = 1; i <= 10; i++) {
                     int temp = i - 1;
                     LocalDate fromDate = LocalDate.now().minusYears(i);
@@ -45,7 +51,6 @@ public class FilterPriceLog implements Filter<List<BusinessEntity>> {
             } else {
                 companies.add(company);
             }
-            System.out.println("KOMPANI PROCESSING NOW: " + company.getCompanyCode());
         }
 
         return companies;

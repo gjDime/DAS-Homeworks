@@ -63,6 +63,10 @@
                             <button class="btn btn-primary predict-btn" th:attr="data-company-id=${data.id}">
                                 Predict Next Month Price
                             </button>
+                            <form METHOD="POST" action="/tehnicals">
+                                <input type="hidden" th:name="companyId" th:value="${companyId}">
+                                <button>Tehnicals</button>
+                            </form>
                             <p class="mt-3 prediction-message" th:attr="id='prediction-' + ${data.id}">
                                 <!-- Prediction result will go here -->
                             </p>

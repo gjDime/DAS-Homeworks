@@ -22,7 +22,7 @@ import java.util.Map;
 public class BusinessController {
 
     private final BusinessService businessService;
-    private final AiService AiService;
+    private final AiService aiService;
 
     @GetMapping("/")
     public String getIndexPage(Model model) {
@@ -64,15 +64,16 @@ public class BusinessController {
     }
 
     @PostMapping("/tehnicals")
-    public String getTehnicals(@RequestParam Long companyId, Model model) throws Exception {
-        List<PriceLogEntity> priceLogs = businessService.findAllForCompany(companyId);
+    public String getTehnicals(@RequestParam Long companyId, Model model) throws Exception {//TODO
 
+        var oscilators = aiService.generateSignalsByTimeframe(companyId);
+        Map<String, String> oscillators = oscilators.get("month");
         // Calculate Moving Averages (e.g., SMA, EMA) and Oscillators (e.g., RSI, MACD)
-        Map<String, Object> movingAverages = AiService.calculateMovingAverages(priceLogs);
-        Map<String, Object> oscillators = AiService.calculateOscillators(priceLogs);
+//        Map<String, Object> movingAverages = oscilators.get("1 Week");
+//        Map<String, Object> oscillators = AiService.calculateOscillators(priceLogs);
 
         // Add data to the model
-        model.addAttribute("movingAverages", movingAverages);
+//        model.addAttribute("movingAverages", movingAverages);
         model.addAttribute("oscillators", oscillators);
         model.addAttribute("companyName", businessService.findById(companyId).getCompanyCode());
 
