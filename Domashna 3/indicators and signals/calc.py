@@ -459,6 +459,24 @@ daily_signals = get_daily_signals(technical_data_with_signals)
 weekly_signals = get_weekly_signals(technical_data_with_signals)
 monthly_signals = get_monthly_signals(technical_data_with_signals)
 
+def calculate_all_timeframes(data):
+    """Calculate all technical indicators for daily, weekly, and monthly timeframes and return as a dictionary."""
+    df = data.copy()
+
+    # Calculate indicators for each timeframe
+    df_daily = calculate_daily_indicators(df)
+    df_weekly = calculate_weekly_indicators(df)
+    df_monthly = calculate_monthly_indicators(df)
+
+    # Store DataFrames in a dictionary
+    indicator_data = {
+        'daily': df_daily,
+        'weekly': df_weekly,
+        'monthly': df_monthly
+    }
+
+    return indicator_data
+
 # Print results                                                                                           -----PRINTOVI
 #print("\nDaily signals and indicators:")
 #print(daily_signals.tail())
