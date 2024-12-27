@@ -12,6 +12,10 @@ import java.util.Optional;
 @Repository
 public interface PriceLogRepository extends JpaRepository<PriceLogEntity, Long> {
     Optional<PriceLogEntity> findByDateAndCompany(LocalDate date, BusinessEntity company);
+
     List<PriceLogEntity> findByCompanyIdAndDateBetween(Long companyId, LocalDate from, LocalDate to);
+
     List<PriceLogEntity> findAllByDate(LocalDate date);
+
+    List<PriceLogEntity> findByCompanyId(Long companyId);
 }

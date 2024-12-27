@@ -3,7 +3,7 @@ package com.example.project1.web;
 import com.example.project1.model.BusinessEntity;
 import com.example.project1.model.PriceLogEntity;
 import com.example.project1.service.BusinessService;
-import com.example.project1.service.AiService;
+import com.example.project1.service.BusinessCalcService;
 import com.example.project1.service.TehnicalsService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Controller;
@@ -23,9 +23,9 @@ import java.util.Map;
 public class BusinessController {
 
     private final BusinessService businessService;
-    private final AiService aiService;
+    private final BusinessCalcService businessCalcService;
     private final TehnicalsService tehnicalsService;
-    @GetMapping("/")
+    @GetMapping({"/","index"})
     public String getIndexPage(Model model) {
         model.addAttribute("companies", businessService.findAll());
         return "index";
