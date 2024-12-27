@@ -1,40 +1,44 @@
 import pandas as pd
 import numpy as np
 import ta
+from fastapi import FastAPI, HTTPException
+from pydantic import BaseModel
+
+
 
 # Load the uploaded file to analyze its structure and content
-data = pd.read_csv(r'C:\Users\Ane\Downloads\DAS-Homeworks-main\Домашна 1\stock_market.csv')
-data = data[data['Issuer'] == 'ADIN']   #                                                       ---RABOTIMO SS 1 ISSUER TREBA DA SE TRGNE
-
-data.rename(columns={'Last trade price': 'last_transaction_price'}, inplace=True)
-
-unique_issuers = data['Issuer'].unique()
-
-# Create a dictionary to store DataFrames for each issuer
-issuer_dfs = {}
-
-# Split the data for each issuer
-for issuer in unique_issuers:
-    issuer_dfs[issuer] = data[data['Issuer'] == issuer].copy()
-
-# Data preprocessing
-# Convert 'Date' column to datetime
-data['Date'] = pd.to_datetime(data['Date'], errors='coerce')
-
-# Remove rows with invalid dates
-data = data.dropna(subset=['Date'])
-
-# Sort by date in ascending order for time-series analysis
-data = data.sort_values(by='Date')
-
-# Remove commas from 'Last trade price' and convert to numeric
-data['last_transaction_price'] = pd.to_numeric(data['last_transaction_price'].str.replace(',', ''), errors='coerce')
-
-# Select necessary columns for technical analysis
-technical_data = data[['Date', 'last_transaction_price']].dropna()
-
-# Rename columns for easier handling
-technical_data.rename(columns={'last_transaction_price': 'Price'}, inplace=True)
+# data = pd.read_csv(r'C:\Users\Ane\Downloads\DAS-Homeworks-main\Домашна 1\stock_market.csv')
+# data = data[data['Issuer'] == 'ADIN']   #                                                       ---RABOTIMO SS 1 ISSUER TREBA DA SE TRGNE
+#
+# data.rename(columns={'Last trade price': 'last_transaction_price'}, inplace=True)
+#
+# unique_issuers = data['Issuer'].unique()
+#
+# # Create a dictionary to store DataFrames for each issuer
+# issuer_dfs = {}
+#
+# # Split the data for each issuer
+# for issuer in unique_issuers:
+#     issuer_dfs[issuer] = data[data['Issuer'] == issuer].copy()
+#
+# # Data preprocessing
+# # Convert 'Date' column to datetime
+# data['Date'] = pd.to_datetime(data['Date'], errors='coerce')
+#
+# # Remove rows with invalid dates
+# data = data.dropna(subset=['Date'])
+#
+# # Sort by date in ascending order for time-series analysis
+# data = data.sort_values(by='Date')
+#
+# # Remove commas from 'Last trade price' and convert to numeric
+# data['last_transaction_price'] = pd.to_numeric(data['last_transaction_price'].str.replace(',', ''), errors='coerce')
+#
+# # Select necessary columns for technical analysis
+# technical_data = data[['Date', 'last_transaction_price']].dropna()
+#
+# # Rename columns for easier handling
+# technical_data.rename(columns={'last_transaction_price': 'Price'}, inplace=True)
 
 
 def calculate_daily_indicators(data):
@@ -296,16 +300,16 @@ def get_monthly_indicators(df):
 
 
 # Main calculation function
-def calculate_all_timeframes(data):
-    """Calculate all technical indicators for all timeframes"""
-    df = data.copy()
-
-    # Calculate indicators for each timeframe
-    df = calculate_daily_indicators(df)
-    df = calculate_weekly_indicators(df)
-    df = calculate_monthly_indicators(df)
-
-    return df
+# def calculate_all_timeframes(data):
+#     """Calculate all technical indicators for all timeframes"""
+#     df = data.copy()
+#
+#     # Calculate indicators for each timeframe
+#     df = calculate_daily_indicators(df)
+#     df = calculate_weekly_indicators(df)
+#     df = calculate_monthly_indicators(df)
+#
+#     return df
 
 
 # Example usage
@@ -449,16 +453,39 @@ def get_monthly_signals(df):
 
 # Usage example:
 # First calculate all technical indicators using your existing calculate_all_timeframes function
-technical_data = calculate_all_timeframes(data)
+# technical_data = calculate_all_timeframes(data)
 
 # Then generate all signals
-technical_data_with_signals = generate_signals(technical_data)
+# technical_data_with_signals = generate_signals(technical_data)
+#
+# # Finally, get separate timeframe signals
+# daily_signals = get_daily_signals(technical_data_with_signals)
+# weekly_signals = get_weekly_signals(technical_data_with_signals)
+# monthly_signals = get_monthly_signals(technical_data_with_signals)
 
-# Finally, get separate timeframe signals
-daily_signals = get_daily_signals(technical_data_with_signals)
-weekly_signals = get_weekly_signals(technical_data_with_signals)
-monthly_signals = get_monthly_signals(technical_data_with_signals)
+app = FastAPI()
 
+class DataFrameInput(BaseModel):
+    data: list  # List of rows
+    columns: list  # Column names
+
+
+# API endpoint
+@app.post("/calculate-timeframes/")
+def calculate_timeframes(input_data: DataFrameInput):
+    print(input_data)
+    try:
+        # Convert input data to DataFrame
+        df = pd.DataFrame(data=input_data.data, columns=input_data.columns)
+
+        # Calculate all timeframes
+        result = calculate_all_timeframes(df)
+
+        return {"status": "success", "data": result}
+
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=str(e))
+# uvicorn calc:app --reload
 def calculate_all_timeframes(data):
     """Calculate all technical indicators for daily, weekly, and monthly timeframes and return as a dictionary."""
     df = data.copy()
@@ -468,11 +495,10 @@ def calculate_all_timeframes(data):
     df_weekly = calculate_weekly_indicators(df)
     df_monthly = calculate_monthly_indicators(df)
 
-    # Store DataFrames in a dictionary
     indicator_data = {
-        'daily': df_daily,
-        'weekly': df_weekly,
-        'monthly': df_monthly
+        'daily': df_daily.to_dict(orient="records"),
+        'weekly': df_weekly.to_dict(orient="records"),
+        'monthly': df_monthly.to_dict(orient="records")
     }
 
     return indicator_data
