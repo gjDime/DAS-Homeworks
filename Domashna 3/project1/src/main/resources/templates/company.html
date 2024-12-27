@@ -20,13 +20,16 @@
             justify-content: center;
             align-items: center;
         }
+
         .prediction-message {
             font-size: 1.1rem;
             font-weight: bold;
         }
+
         .prediction-message.success {
             color: #28a745; /* Green for success */
         }
+
         .prediction-message.error {
             color: #dc3545; /* Red for error */
         }
@@ -49,7 +52,8 @@
             <div class="col-12 col-md-6 mb-5">
                 <div class="card shadow-sm h-100">
                     <div class="card-body">
-                        <h4 class="card-title text-center" th:text="${data.companyCode} + ' - Price Trend'">Company Name</h4>
+                        <h4 class="card-title text-center" th:text="${data.companyCode} + ' - Price Trend'">Company
+                            Name</h4>
                         <p class="text-center text-muted">
                             Last Updated:
                             <span th:text="${#temporals.format(data.lastUpdated, 'dd-MM-yyyy')}">Unknown Date</span>
@@ -64,13 +68,8 @@
                             <button class="btn btn-primary predict-btn" th:attr="data-company-id=${data.id}">
                                 Predict Next Month Price
                             </button>
-                            <form METHOD="POST" action="/tehnicals">
-                                <input type="hidden" th:name="companyId" th:value="${companyId}">
-                                <button>Tehnicals</button>
-                            </form>
-                            <p class="mt-3 prediction-message" th:attr="id='prediction-' + ${data.id}">
-                                <!-- Prediction result will go here -->
-                            </p>
+
+                            <p class="mt-3 prediction-message" th:attr="id='prediction-' + ${data.id}"></p>
                         </div>
                     </div>
                 </div>
@@ -132,10 +131,10 @@
                             time: {
                                 unit: "day",
                                 tooltipFormat: "yyyy-MM-dd",
-                                displayFormats: { day: "yyyy-MM-dd" }
+                                displayFormats: {day: "yyyy-MM-dd"}
                             }
                         },
-                        y: { beginAtZero: true }
+                        y: {beginAtZero: true}
                     }
                 }
             });
@@ -153,7 +152,7 @@
                     headers: {
                         'Content-Type': 'application/x-www-form-urlencoded',
                     },
-                    body: new URLSearchParams({ companyId })
+                    body: new URLSearchParams({companyId})
                 })
                     .then(response => {
                         if (!response.ok) {
