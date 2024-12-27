@@ -4,6 +4,7 @@ import com.example.project1.model.BusinessEntity;
 import com.example.project1.model.PriceLogEntity;
 import com.example.project1.service.BusinessService;
 import com.example.project1.service.AiService;
+import com.example.project1.service.TehnicalsService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
@@ -23,7 +24,7 @@ public class BusinessController {
 
     private final BusinessService businessService;
     private final AiService aiService;
-
+    private final TehnicalsService tehnicalsService;
     @GetMapping("/")
     public String getIndexPage(Model model) {
         model.addAttribute("companies", businessService.findAll());
@@ -66,15 +67,12 @@ public class BusinessController {
     @PostMapping("/tehnicals")
     public String getTehnicals(@RequestParam Long companyId, Model model) throws Exception {//TODO
 
-        var oscilators = aiService.generateSignalsByTimeframe(companyId);
-        Map<String, String> oscillators = oscilators.get("month");
-        // Calculate Moving Averages (e.g., SMA, EMA) and Oscillators (e.g., RSI, MACD)
-//        Map<String, Object> movingAverages = oscilators.get("1 Week");
-//        Map<String, Object> oscillators = AiService.calculateOscillators(priceLogs);
+//        var oscilators = aiService.generateSignalsByTimeframe(companyId);
+//        Map<String, String> oscillators = oscilators.get("month");
+        var tehnicals = tehnicalsService.calcOscillatorsAllTimeframes(companyId);
+        System.out.println(tehnicals);
 
-        // Add data to the model
-//        model.addAttribute("movingAverages", movingAverages);
-        model.addAttribute("oscillators", oscillators);
+//        model.addAttribute("oscillators", oscillators);
         model.addAttribute("companyName", businessService.findById(companyId).getCompanyCode());
 
 
