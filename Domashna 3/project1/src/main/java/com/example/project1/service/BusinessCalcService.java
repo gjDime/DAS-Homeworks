@@ -21,7 +21,7 @@ public class BusinessCalcService {
     private final PriceLogRepository priceLogRepository;
     private final BusinessRepository businessRepository;
 
-    private final String predictionApiUrl = "http://127.0.0.1:8000/predict-next-month-price/";
+    private final String predictionApiUrl = "http://127.0.0.1:8000/predict-next-month/";
     private final String tehnicalsUrl = "http://127.0.0.1:5000/generate_signal";
 
     public BusinessCalcService(PriceLogRepository priceLogRepository, BusinessRepository businessRepository) {
@@ -29,7 +29,9 @@ public class BusinessCalcService {
         this.businessRepository = businessRepository;
     }
 
-    public String technicalAnalysis(Long companyId) {
+    public Map<String,String> technicalAnalysis(Long companyId) {
+        final String tehnicalsUrl = "http://127.0.0.1:5000/market_signal";
+
         // Retrieve historical data from the repository
         List<PriceLogEntity> data = priceLogRepository.findByCompanyId(companyId);
 
@@ -57,12 +59,31 @@ public class BusinessCalcService {
                 Map.class
         );
 
+
         Map<String, Object> responseBody = responseEntity.getBody();
-        if (responseBody != null && responseBody.containsKey("final_signal")) {
-            return responseBody.get("final_signal").toString();
+
+        if (responseBody != null) {
+            String dailySignal = (String) responseBody.get("daily_signal");
+            String weeklySignal = (String) responseBody.get("weekly_signal");
+            String monthlySignal = (String) responseBody.get("monthly_signal");
+
+            // Return all three signals in a map
+            Map<String, String> signals = new HashMap<>();
+            signals.put("daily_signal", dailySignal);
+            signals.put("weekly_signal", weeklySignal);
+            signals.put("monthly_signal", monthlySignal);
+
+            return signals;
         } else {
-            throw new RuntimeException("Failed to retrieve a valid signal from the Python API.");
+            throw new RuntimeException("Failed to retrieve signals from Python API.");
         }
+
+// single signal code
+//        if (responseBody != null && responseBody.containsKey("final_signal")) {
+//            return responseBody.get("final_signal").toString();
+//        } else {
+//            throw new RuntimeException("Failed to retrieve a valid signal from the Python API.");
+//        }
     }
 
 
@@ -71,13 +92,19 @@ public class BusinessCalcService {
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.APPLICATION_JSON);
 
-        List<PriceLogEntity> data = priceLogRepository.findByCompanyIdAndDateBetween(companyId, LocalDate.now().minusMonths(1), LocalDate.now());
+        List<PriceLogEntity> data = priceLogRepository.findByCompanyIdAndDateBetween(companyId, LocalDate.now().minusMonths(3), LocalDate.now());
         Map<String, Object> requestBody = Map.of("data", mapToRequestData(data));
 
         HttpEntity<Map<String, Object>> requestEntity = new HttpEntity<>(requestBody, headers);
-        Map<String, Double> response = restTemplate.postForObject(predictionApiUrl, requestEntity, Map.class);
-
-        return response != null ? response.get("predicted_next_month_price") : null;
+        try {
+            // Call the FastAPI endpoint using RestTemplate
+            Map<String, Double> response = restTemplate.postForObject(predictionApiUrl, requestEntity, Map.class);
+            return response != null ? response.get("predicted_next_month_price") : null;
+        } catch (Exception e) {
+            // Handle exceptions
+            e.printStackTrace();
+            return null;
+        }
     }
 
     public static List<Map<String, Object>> mapToRequestData(List<PriceLogEntity> historicalDataEntities) {

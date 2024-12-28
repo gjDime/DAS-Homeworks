@@ -8,24 +8,28 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import java.util.Map;
+
 @RestController
 @RequestMapping("/api")
 @RequiredArgsConstructor
 public class BusinessCalcController {
 
-    private final BusinessCalcService BusinessCalcService;
+    private final BusinessCalcService businessCalcService;
 
 
     @PostMapping("/tehnicals")
-    public ResponseEntity<String> technicals(@RequestParam(name = "companyId") Long companyId) {//technicalAnalysis
-        String response = BusinessCalcService.technicalAnalysis(companyId);
-        return ResponseEntity.ok(response);
+    public ResponseEntity<Map<String, String>> technicals(@RequestParam(name = "companyId") Long companyId) {//technicalAnalysis
+        System.out.println("/api/tehnicals");
+        Map<String, String> signals = businessCalcService.technicalAnalysis(companyId);
+        System.out.println(signals.values());
+        return ResponseEntity.ok(signals);
     }
 
     //TODO
     @PostMapping("/predict")
     public ResponseEntity<Double> predictPrice(@RequestParam(name = "companyId") Long companyId) {//lstm
-        double predictedPrice = BusinessCalcService.predictNextMonth(companyId);
+        double predictedPrice = businessCalcService.predictNextMonth(companyId);
         return ResponseEntity.ok(predictedPrice);
     }
 
