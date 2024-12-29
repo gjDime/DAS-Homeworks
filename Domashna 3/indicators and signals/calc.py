@@ -8,6 +8,7 @@ import requests
 
 app = Flask(__name__)
 
+
 def calculate_rsi(df, period=14):
     delta = df['close'].diff()
     gain = (delta.where(delta > 0, 0)).rolling(window=period).mean()
@@ -53,23 +54,26 @@ def calculate_atr(df, period=14):
 def calculate_sma(df, period):
     return df['close'].rolling(window=period).mean()
 
+
 def calculate_ema(df, period):
     return df['close'].ewm(span=period, adjust=False).mean()
 
+
 def calculate_wma(df, period):
-    weights = np.arange(1, period+1)
-    return df['close'].rolling(window=period).apply(lambda x: np.dot(x, weights)/weights.sum(), raw=True)
+    weights = np.arange(1, period + 1)
+    return df['close'].rolling(window=period).apply(lambda x: np.dot(x, weights) / weights.sum(), raw=True)
+
 
 def calculate_hma(df, period):
-    wma_half = calculate_wma(df, period//2)
+    wma_half = calculate_wma(df, period // 2)
     wma_full = calculate_wma(df, period)
     return calculate_wma(df.assign(close=wma_half - wma_full), period=int(np.sqrt(period)))
-
 
 
 def calculate_vwap(df):
     vwap = (df['close'] * df['volume']).cumsum() / df['volume'].cumsum()
     return vwap
+
 
 def generate_signal(df, period=14):
     last_row = df.iloc[-1]
@@ -171,7 +175,7 @@ def generate_signal(df, period=14):
 #
 #     return {"final_signal": final_signal}
 
-#TEST TODO
+# TEST TODO
 @app.route('/market_signal', methods=['POST'])
 def generate_signal_api():
     data = request.get_json()
@@ -245,35 +249,61 @@ def generate_signal_api():
     })
 
 
-#========================================
+# ========================================
 # Sentiment Analysis Utilities
 def fetch_latest_news(stock_symbol):
-    url = f"https://example.com/news/{stock_symbol}"
-    response = requests.get(url)
-    if response.status_code == 200:
-        soup = BeautifulSoup(response.text, "html.parser")
-        headlines = soup.find_all("p")
-        return " ".join([headline.text for headline in headlines if stock_symbol in headline.text])
-    return "No relevant news found."
+    company_code = request.args.get('company_code')
+    base_url = f"https://www.mse.mk/mk/search/{company_code}"
+    page_response = requests.get(base_url)
+
+    if page_response.status_code != 200:
+        return f"Unable to access company page: HTTP {page_response.status_code}"
+
+    page_content = BeautifulSoup(page_response.text, 'html.parser')
+    print(page_content.prettify())
+
+    row_section = page_content.find('div', class_='row')
+    if not row_section:
+        return "The 'row' section is missing for this company."
+
+    news_anchor = row_section.find('a', href=True)
+    if not news_anchor:
+        return "No news links are available in the 'row' section."
+
+    news_url = f"https://www.mse.mk{news_anchor['href']}"
+    news_page_response = requests.get(news_url)
+
+    if news_page_response.status_code != 200:
+        return f"Unable to load news details: HTTP {news_page_response.status_code}"
+
+    news_page_content = BeautifulSoup(news_page_response.text, 'html.parser')
+    news_paragraphs = news_page_content.find_all('p')
+
+    for p in news_paragraphs:
+        if company_code in p.text:
+            return p.text.strip()
+
+    return "No references to the company code were found in the news article."
 
 
 def analyze_article_sentiment(content):
     analyzer = SentimentIntensityAnalyzer()
     return analyzer.polarity_scores(content)['compound']
 
+
 @app.route("/news_sentiment", methods=["GET"])
 def news_sentiment():
-    symbol = request.args.get("symbol")
-    if not symbol:
-        return jsonify({"error": "Stock symbol is required"}), 400
+    company_code = request.args.get("company_code")
+    if not company_code:
+        return jsonify({"error": "Stock company_code is required"}), 400
 
-    news = fetch_latest_news(symbol)
+    news = fetch_latest_news(company_code)
     sentiment_score = analyze_article_sentiment(news)
     recommendation = "BUY" if sentiment_score > 0.05 else "SELL" if sentiment_score < -0.05 else "HOLD"
 
     return jsonify({
-        "symbol": symbol,
-        "news": news,
+        # "company_code": company_code,
+        # "news": news,
         "sentiment_score": sentiment_score,
         "recommendation": recommendation
     })

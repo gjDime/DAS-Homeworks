@@ -1,6 +1,8 @@
 package com.example.project1.service;
 
+import com.example.project1.model.BusinessEntity;
 import com.example.project1.model.PriceLogEntity;
+import com.example.project1.model.dto.Response;
 import com.example.project1.repository.BusinessRepository;
 import com.example.project1.repository.PriceLogRepository;
 import org.springframework.http.*;
@@ -29,7 +31,7 @@ public class BusinessCalcService {
         this.businessRepository = businessRepository;
     }
 
-    public Map<String,String> technicalAnalysis(Long companyId) {
+    public Map<String, String> technicalAnalysis(Long companyId) {
         final String tehnicalsUrl = "http://127.0.0.1:5000/market_signal";
 
         // Retrieve historical data from the repository
@@ -115,4 +117,40 @@ public class BusinessCalcService {
             return data;
         }).collect(Collectors.toList());
     }
+
+    public Response analyzeNewsSentiment(Long companyId) throws Exception {
+        String apiUrl = "http://127.0.0.1:5000/news_sentiment";
+
+        BusinessEntity business = businessRepository.findById(companyId)
+                .orElseThrow(() -> new Exception("Business entity not found"));
+
+        String companyCode = business.getCompanyCode();
+
+        HttpHeaders httpHeaders = new HttpHeaders();
+        httpHeaders.setContentType(MediaType.APPLICATION_JSON);
+
+        ResponseEntity<Map> apiResponse = restTemplate.exchange(
+                apiUrl + "?company_code=" + companyCode,
+                HttpMethod.GET,
+                new HttpEntity<>(httpHeaders),
+                Map.class
+        );
+
+        Map<String, Object> responseContent = apiResponse.getBody();
+        if (responseContent == null)
+            throw new RuntimeException("The sentiment analysis API returned no data.");
+
+
+        if (responseContent.containsKey("error")) {
+            String errorDetails = (String) responseContent.get("error");
+            throw new RuntimeException("Python API reported an error: " + errorDetails);
+        }
+
+        Response result = new Response();
+        result.score = (Double) responseContent.get("sentiment_score");
+        result.recommendation = (String) responseContent.get("recommendation");
+
+        return result;
+    }
+
 }
