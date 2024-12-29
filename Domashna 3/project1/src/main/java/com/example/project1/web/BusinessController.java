@@ -13,10 +13,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 
 import java.time.LocalDate;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 @Controller
 @RequiredArgsConstructor
@@ -25,9 +22,14 @@ public class BusinessController {
     private final BusinessService businessService;
     private final BusinessCalcService businessCalcService;
     private final TehnicalsService tehnicalsService;
-    @GetMapping({"/","index"})
+
+    @GetMapping({"/", "index"})
     public String getIndexPage(Model model) {
-        model.addAttribute("companies", businessService.findAll());
+        var companies = businessService.findAll().stream()
+                .filter(c -> c.getLastUpdated()!=null)
+                .sorted(Comparator.comparing(BusinessEntity::getCompanyCode))
+                .toList();
+        model.addAttribute("companies", companies);
         return "index";
     }
 
