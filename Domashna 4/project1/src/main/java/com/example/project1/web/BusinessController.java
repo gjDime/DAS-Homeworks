@@ -3,13 +3,10 @@ package com.example.project1.web;
 import com.example.project1.model.BusinessEntity;
 import com.example.project1.model.PriceLogEntity;
 import com.example.project1.service.BusinessService;
-import com.example.project1.service.BusinessCalcService;
-import com.example.project1.service.TehnicalsService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 
 import java.time.LocalDate;
@@ -20,8 +17,6 @@ import java.util.*;
 public class BusinessController {
 
     private final BusinessService businessService;
-    private final BusinessCalcService businessCalcService;
-    private final TehnicalsService tehnicalsService;
 
     @GetMapping({"/", "index"})
     public String getIndexPage(Model model) {
@@ -65,20 +60,4 @@ public class BusinessController {
         model.addAttribute("companyId", companyId);
         return "company";
     }
-
-    @PostMapping("/tehnicals")
-    public String getTehnicals(@RequestParam Long companyId, Model model) throws Exception {//TODO
-
-//        var oscilators = aiService.generateSignalsByTimeframe(companyId);
-//        Map<String, String> oscillators = oscilators.get("month");
-        var tehnicals = tehnicalsService.calcOscillatorsAllTimeframes(companyId);
-        System.out.println(tehnicals);
-
-//        model.addAttribute("oscillators", oscillators);
-        model.addAttribute("companyName", businessService.findById(companyId).getCompanyCode());
-
-
-        return "tehnicals";
-    }
-
 }
