@@ -1,0 +1,48 @@
+version: "3.8"
+services:
+  indicators-service:
+    build:
+      context: ./indicators and signals
+      dockerfile: Dockerfile
+    ports:
+      - "5000:5000"
+    volumes:
+      - ./indicators and signals:/app
+    environment:
+      - FLASK_APP=calc.py
+      - FLASK_ENV=development
+      - PYTHONUNBUFFERED=1
+    depends_on:
+      - prediction-service
+    networks:
+      - app-network
+
+  prediction-service:
+    build:
+      context: ./ai
+      dockerfile: Dockerfile
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./ai:/app
+    environment:
+      - PYTHONUNBUFFERED=1
+    deploy:
+      resources:
+        limits:
+          memory: 4G
+    networks:
+      - app-network
+
+  project1-service:
+    build:
+      context: ./project1
+      dockerfile: Dockerfile
+    ports:
+      - "8080:8080"
+    networks:
+      - app-network
+
+networks:
+  app-network:
+    driver: bridge
