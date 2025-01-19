@@ -5,3 +5,4 @@ statsmodels==0.14.0
 vaderSentiment
 beautifulsoup4
 requests
+werkzeug==2.2.2
